@@ -24,23 +24,47 @@ def get_db():
         db.close()
 
 
-@app.post("/users/", response_model=schemas.User)
-def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
-    db_user = actions.get_user_by_email(db, email=user.email)
-    if db_user:
-        raise HTTPException(status_code=400, detail="Email already registered")
-    return actions.create_user(db=db, user=user)
+@app.get("/skills/", response_model=list[schemas.Skill])  # type: ignore
+async def read_skills(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    skills = actions.get_skills(db, skip=skip, limit=limit)
+    return skills
 
 
-@app.get("/users/", response_model=list[schemas.User])  # type: ignore
-def read_users(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    users = actions.get_users(db, skip=skip, limit=limit)
-    return users
+@app.get("/skills/{skill_id}", response_model=schemas.Skill)
+async def read_skill(skill_id: int, db: Session = Depends(get_db)):
+    db_skill = actions.get_skill(db, skill_id=skill_id)
+    if db_skill is None:
+        raise HTTPException(status_code=404, detail="Skill not found")
+    return db_skill
 
 
-@app.get("/users/{user_id}", response_model=schemas.User)
-def read_user(user_id: int, db: Session = Depends(get_db)):
-    db_user = actions.get_user(db, user_id=user_id)
-    if db_user is None:
-        raise HTTPException(status_code=404, detail="User not found")
-    return db_user
+@app.post("/skills/create", response_model=schemas.Skill)
+async def create_skill(skill: schemas.SkillCreate, db: Session = Depends(get_db)):
+    db_skill = actions.get_skill_by_name(db, skill_name=skill.skill_name)
+    if db_skill:
+        raise HTTPException(status_code=400, detail="Skill already registered")
+    return actions.create_skill(db=db, skill=skill)
+
+
+@app.put("/skills/update/name/{skill_id}", response_model=schemas.Skill)
+async def update_skill_name(skill_id: int, new_skill_name: str, db: Session = Depends(get_db)):
+    db_skill = actions.get_skill(db, skill_id=skill_id)
+    if db_skill is None:
+        raise HTTPException(status_code=404, detail="Skill not found")
+    actions.update_skill_name(db, db_skill, new_skill_name)
+    return db_skill
+
+
+@app.put("/skills/update/description/{skill_id}", response_model=schemas.Skill)
+async def update_skill_description(skill_id: int, new_skill_description: str, db: Session = Depends(get_db)):
+    db_skill = actions.get_skill(db, skill_id=skill_id)
+    if db_skill is None:
+        raise HTTPException(status_code=404, detail="Skill not found")
+    actions.update_skill_description(db, db_skill, new_skill_description)
+    return db_skill
+
+
+@app.delete("/skills/delete/{skill_id}", response_model=dict)
+async def delete_skill(skill_id: int, db: Session = Depends(get_db)):
+    result = actions.delete_skill(db, skill_id)
+    return result

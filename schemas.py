@@ -1,19 +1,18 @@
 from pydantic import BaseModel
 
 
-class UserBase(BaseModel):
-    email: str
+class SkillBase(BaseModel):
+    skill_name: str
 
 
-class UserCreate(UserBase):
-    password: str
-    email: str
-    name: str
+class SkillCreate(SkillBase):
+    skill_name: str
+    description: str
 
 
-class User(UserBase):
+class Skill(SkillBase):
     id: int
-    is_active: bool
+    description: str
 
 
 class Config:
